@@ -1,0 +1,163 @@
+@import "tailwindcss";
+
+@layer utilities {
+  .pixelated {
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+}
+
+:root {
+  --wood-dark: #2a1810;
+  --wood-mid: #4a2f1c;
+  --wood-light: #734827;
+  --wood-border: #1a0f0a;
+  --parchment: #e9d7b8;
+  --parchment-dark: #cbb48d;
+  --gold-primary: #f2c037;
+  --gold-dark: #b8860b;
+}
+
+body {
+  font-family: 'MedievalSharp', system-ui, sans-serif;
+  background-color: #0f0c0b;
+  color: #eedcc0;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: none;
+}
+
+/* Pixel borders and medieval frames */
+.pixel-box-wood {
+  background-color: #3b2214;
+  border: 4px solid #1a0d07;
+  box-shadow: 
+    inset 2px 2px 0px #5c371e,
+    inset -2px -2px 0px #24140a,
+    0 4px 12px rgba(0, 0, 0, 0.6);
+}
+
+.pixel-box-parchment {
+  background-color: #ebd6b5;
+  color: #2b1b12;
+  border: 3px solid #4a2f1c;
+  box-shadow: 
+    inset 2px 2px 0px #faebd7,
+    inset -2px -2px 0px #c2a882,
+    0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.pixel-box-dark {
+  background-color: #1e1511;
+  border: 3px solid #3d2719;
+  box-shadow: 
+    inset 2px 2px 0px #2c1d13,
+    inset -2px -2px 0px #110c09;
+}
+
+.pixel-btn {
+  border: 3px solid #140b07;
+  box-shadow: 
+    inset 2px 2px 0px rgba(255, 255, 255, 0.25),
+    inset -2px -2px 0px rgba(0, 0, 0, 0.4),
+    0 2px 4px rgba(0, 0, 0, 0.5);
+  transition: all 0.08s ease-in-out;
+}
+
+.pixel-btn:hover {
+  filter: brightness(1.12);
+  transform: translateY(-1px);
+}
+
+.pixel-btn:active {
+  transform: translateY(1px);
+  box-shadow: 
+    inset 2px 2px 0px rgba(0, 0, 0, 0.5),
+    inset -2px -2px 0px rgba(255, 255, 255, 0.15);
+}
+
+/* Custom scrollbars with medieval timber look */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1e130c;
+  border: 2px solid #110a06;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #5a381f;
+  border: 2px solid #28170d;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #7d4d29;
+}
+
+/* Pixel UI Authentic Textures and Components */
+.pixel-slot-container {
+  background-image: url('/assets/ui/inventory_slot.png');
+  background-size: 100% 100%;
+  image-rendering: pixelated;
+}
+
+.pixel-slot-container-active {
+  background-image: url('/assets/ui/inventory_slot_active.png');
+  background-size: 100% 100%;
+  image-rendering: pixelated;
+}
+
+.pixel-wood-panel {
+  background-color: #381d0f;
+  background-image: url('/assets/ui/wood_panel.png');
+  background-size: 128px 128px;
+  background-repeat: repeat;
+  image-rendering: pixelated;
+  border: 4px solid #140803;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.7);
+}
+
+.pixel-hud-bar {
+  background-image: url('/assets/ui/hud_header_frame.png');
+  background-size: 100% 100%;
+  background-color: #3b2011;
+  image-rendering: pixelated;
+  border: 2px solid #140703;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.8);
+}
+
+.pixel-btn-action-buy {
+  background-image: url('/assets/ui/button_buy.png');
+  background-size: 100% 100%;
+  image-rendering: pixelated;
+  border: none;
+  cursor: pointer;
+  transition: filter 0.1s ease, transform 0.08s ease;
+}
+.pixel-btn-action-buy:hover {
+  filter: brightness(1.15);
+}
+.pixel-btn-action-buy:active {
+  filter: brightness(0.9);
+  transform: translateY(1px);
+}
+
+.pixel-btn-action-sell {
+  background-image: url('/assets/ui/button_sell.png');
+  background-size: 100% 100%;
+  image-rendering: pixelated;
+  border: none;
+  cursor: pointer;
+  transition: filter 0.1s ease, transform 0.08s ease;
+}
+.pixel-btn-action-sell:hover {
+  filter: brightness(1.15);
+}
+.pixel-btn-action-sell:active {
+  filter: brightness(0.9);
+  transform: translateY(1px);
+}
+
+

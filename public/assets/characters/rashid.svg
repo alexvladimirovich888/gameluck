@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" shape-rendering="crispEdges">
+    <rect width="32" height="32" fill="#1c1009"/>
+    <!-- Turban with Jewel -->
+    <rect x="7" y="3" width="18" height="9" fill="#f8fafc"/>
+    <rect x="8" y="4" width="16" height="7" fill="#ffffff"/>
+    <rect x="15" y="5" width="3" height="3" fill="#dc2626"/>
+    <!-- Face & Trimmed Beard -->
+    <rect x="10" y="11" width="12" height="10" fill="#b45309"/>
+    <rect x="11" y="13" width="2" height="2" fill="#1c1917"/>
+    <rect x="19" y="13" width="2" height="2" fill="#1c1917"/>
+    <rect x="11" y="17" width="10" height="4" fill="#1c1917"/>
+    <!-- Silk Robe with Gold Trim -->
+    <rect x="6" y="21" width="20" height="11" fill="#7c2d12"/>
+    <rect x="13" y="21" width="6" height="11" fill="#facc15"/>
+  </svg>
