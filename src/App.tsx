@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   ItemCategory,
   LocationId,
@@ -21,7 +21,9 @@ import {
   disconnectPhantom,
   autoConnectPhantom,
   formatWalletAddress,
-  getPhantomProvider
+  getPhantomProvider,
+  fetchSolanaBalance,
+  formatSolBalance
 } from './utils/phantom';
 import { PixelIcon, GoldPouchIcon, GoldCoinIcon, CompassRoseIcon, WaxSealBadge } from './components/PixelIcons';
 import { PixelCanvasMarket } from './components/PixelCanvasMarket';
@@ -34,6 +36,7 @@ import { MerchantDialogueModal } from './components/MerchantDialogueModal';
 import { OnboardingModal } from './components/OnboardingModal';
 import { ProgressionModal } from './components/ProgressionModal';
 import { GamePreviewPage } from './components/GamePreviewPage';
+import { WalletDetailsModal } from './components/WalletDetailsModal';
 
 type ActiveTab = 'market' | 'warehouse' | 'map' | 'merchants' | 'events';
 type ViewMode = 'preview' | 'game';
@@ -60,6 +63,35 @@ export default function App() {
   const [dayTransitioning, setDayTransitioning] = useState<boolean>(false);
   const [walletConnected, setWalletConnected] = useState<boolean>(false);
   const [walletAddress, setWalletAddress] = useState<string>('');
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [walletCluster, setWalletCluster] = useState<string>('Solana');
+  const [isLoadingBalance, setIsLoadingBalance] = useState<boolean>(false);
+  const [showWalletModal, setShowWalletModal] = useState<boolean>(false);
+
+  const refreshBalance = useCallback(async (addressToQuery?: string) => {
+    const target = addressToQuery || walletAddress;
+    if (!target) return;
+    setIsLoadingBalance(true);
+    try {
+      const res = await fetchSolanaBalance(target);
+      if (res) {
+        setWalletBalance(res.balance);
+        setWalletCluster(res.cluster);
+      }
+    } catch (e) {
+      console.warn('Failed to load balance', e);
+    } finally {
+      setIsLoadingBalance(false);
+    }
+  }, [walletAddress]);
+
+  useEffect(() => {
+    if (walletConnected && walletAddress) {
+      refreshBalance(walletAddress);
+    } else {
+      setWalletBalance(null);
+    }
+  }, [walletConnected, walletAddress, refreshBalance]);
 
   // Auto-save on state change
   useEffect(() => {
@@ -72,6 +104,7 @@ export default function App() {
       if (addr) {
         setWalletAddress(addr);
         setWalletConnected(true);
+        refreshBalance(addr);
       }
     });
 
@@ -79,16 +112,20 @@ export default function App() {
     if (provider) {
       const handleAccountChange = (pubKey: any) => {
         if (pubKey) {
-          setWalletAddress(pubKey.toString());
+          const addr = pubKey.toString();
+          setWalletAddress(addr);
           setWalletConnected(true);
+          refreshBalance(addr);
         } else {
           setWalletAddress('');
           setWalletConnected(false);
+          setWalletBalance(null);
         }
       };
       const handleDisconnect = () => {
         setWalletAddress('');
         setWalletConnected(false);
+        setWalletBalance(null);
       };
       provider.on('accountChanged', handleAccountChange);
       provider.on('disconnect', handleDisconnect);
@@ -97,27 +134,30 @@ export default function App() {
         provider.removeListener('disconnect', handleDisconnect);
       };
     }
-  }, []);
+  }, [refreshBalance]);
 
-  const handleToggleWallet = async () => {
+  const handleConnectWallet = async () => {
     SoundEngine.playCoin();
-    if (!walletConnected) {
-      const res = await connectPhantom();
-      if (res.success && res.address) {
-        setWalletAddress(res.address);
-        setWalletConnected(true);
-        triggerToast('Phantom connected: ' + formatWalletAddress(res.address), true);
-      } else if (res.notInstalled) {
-        triggerToast('Phantom not detected! Opening phantom.app...', false);
-      } else if (res.error) {
-        triggerToast(res.error, false);
-      }
-    } else {
-      await disconnectPhantom();
-      setWalletAddress('');
-      setWalletConnected(false);
-      triggerToast('Phantom disconnected.', false);
+    const res = await connectPhantom();
+    if (res.success && res.address) {
+      setWalletAddress(res.address);
+      setWalletConnected(true);
+      triggerToast('Phantom connected: ' + formatWalletAddress(res.address), true);
+      refreshBalance(res.address);
+    } else if (res.notInstalled) {
+      triggerToast('Phantom not detected! Opening phantom.app...', false);
+    } else if (res.error) {
+      triggerToast(res.error, false);
     }
+  };
+
+  const handleDisconnectWallet = async () => {
+    await disconnectPhantom();
+    setWalletAddress('');
+    setWalletConnected(false);
+    setWalletBalance(null);
+    setShowWalletModal(false);
+    triggerToast('Phantom disconnected.', false);
   };
 
   // First-time onboarding check
@@ -485,7 +525,12 @@ export default function App() {
         hasSavedGame={player.currentDay > 1 || player.gold !== 150}
         walletConnected={walletConnected}
         walletAddress={walletAddress}
-        onToggleWallet={handleToggleWallet}
+        walletBalance={walletBalance}
+        walletCluster={walletCluster}
+        isLoadingBalance={isLoadingBalance}
+        onRefreshBalance={refreshBalance}
+        onConnectWallet={handleConnectWallet}
+        onDisconnectWallet={handleDisconnectWallet}
       />
     );
   }
@@ -577,20 +622,32 @@ export default function App() {
             </button>
 
             {/* Connect Wallet in top right */}
-            <button
-              onClick={handleToggleWallet}
-              className={`pixel-btn px-2.5 py-1 text-xs font-bold font-sans flex items-center gap-1.5 cursor-pointer ${
-                walletConnected
-                  ? 'bg-[#14532d] text-[#86efac] border border-[#22c55e]'
-                  : 'bg-[#2d180d] text-[#fde047] border border-[#ca8a04]'
-              }`}
-              title={walletConnected ? `Phantom Connected: ${walletAddress}` : 'Connect Phantom Wallet'}
-            >
-              <span>{walletConnected ? '🟢' : '👛'}</span>
-              <span className="hidden sm:inline">
-                {walletConnected ? formatWalletAddress(walletAddress) : 'Connect Phantom'}
-              </span>
-            </button>
+            {walletConnected ? (
+              <button
+                onClick={() => {
+                  SoundEngine.playWoodThud();
+                  setShowWalletModal(true);
+                }}
+                className="pixel-btn px-2.5 py-1 text-xs font-bold font-sans flex items-center gap-1.5 cursor-pointer bg-[#14532d] hover:bg-[#166534] text-[#86efac] border border-[#22c55e] shadow-[0_0_10px_rgba(34,197,94,0.3)]"
+                title={`Phantom Connected: ${walletAddress}. Click to view details and balance.`}
+              >
+                <span className="w-2 h-2 rounded-full bg-[#4ade80] animate-pulse"></span>
+                <span className="font-bold text-white hidden sm:inline">Phantom:</span>
+                <span className="text-[#fde047] font-mono">{formatWalletAddress(walletAddress)}</span>
+                <span className="bg-[#0f391f] border border-[#22c55e]/60 px-1.5 py-0.5 text-[11px] font-bold text-[#4ade80]">
+                  {isLoadingBalance ? '... SOL' : formatSolBalance(walletBalance)}
+                </span>
+              </button>
+            ) : (
+              <button
+                onClick={handleConnectWallet}
+                className="pixel-btn px-2.5 py-1 text-xs font-bold font-sans flex items-center gap-1.5 cursor-pointer bg-[#2d180d] text-[#fde047] border border-[#ca8a04] hover:bg-[#3d2414]"
+                title="Connect Phantom Wallet"
+              >
+                <span>🟣</span>
+                <span className="hidden sm:inline">Connect Phantom</span>
+              </button>
+            )}
 
             <button
               onClick={() => {
@@ -829,6 +886,19 @@ export default function App() {
 
       {/* Progression & Career Ladder Modal */}
       {showProgression && <ProgressionModal player={player} onClose={() => setShowProgression(false)} />}
+
+      {/* Wallet Details Modal */}
+      {showWalletModal && walletConnected && (
+        <WalletDetailsModal
+          address={walletAddress}
+          balance={walletBalance}
+          cluster={walletCluster}
+          isLoadingBalance={isLoadingBalance}
+          onRefreshBalance={() => refreshBalance(walletAddress)}
+          onDisconnect={handleDisconnectWallet}
+          onClose={() => setShowWalletModal(false)}
+        />
+      )}
     </div>
   );
 }

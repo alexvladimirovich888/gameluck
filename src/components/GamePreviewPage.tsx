@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   CHARACTER_ASSETS,
   ENVIRONMENT_ASSETS,
@@ -17,15 +17,24 @@ import { SoundEngine } from '../utils/sound';
 import {
   connectPhantom,
   disconnectPhantom,
-  formatWalletAddress
+  formatWalletAddress,
+  fetchSolanaBalance,
+  formatSolBalance
 } from '../utils/phantom';
+import { WalletDetailsModal } from './WalletDetailsModal';
 
 interface GamePreviewPageProps {
   onStartGame: () => void;
   hasSavedGame?: boolean;
   walletConnected?: boolean;
   walletAddress?: string;
+  walletBalance?: number | null;
+  walletCluster?: string;
+  isLoadingBalance?: boolean;
+  onRefreshBalance?: () => void;
   onToggleWallet?: () => void;
+  onConnectWallet?: () => void;
+  onDisconnectWallet?: () => void;
 }
 
 export const GamePreviewPage: React.FC<GamePreviewPageProps> = ({
@@ -33,18 +42,57 @@ export const GamePreviewPage: React.FC<GamePreviewPageProps> = ({
   hasSavedGame = false,
   walletConnected: externalWalletConnected,
   walletAddress: externalWalletAddress,
-  onToggleWallet
+  walletBalance: externalWalletBalance,
+  walletCluster: externalWalletCluster,
+  isLoadingBalance: externalIsLoadingBalance,
+  onRefreshBalance,
+  onToggleWallet,
+  onConnectWallet,
+  onDisconnectWallet
 }) => {
   const [selectedMerchantId, setSelectedMerchantId] = useState<string>('farmer_tomas');
   const [selectedLocationId, setSelectedLocationId] = useState<string>('market_square');
   const [itemCategoryFilter, setItemCategoryFilter] = useState<string>('all');
   const [localWalletConnected, setLocalWalletConnected] = useState<boolean>(false);
   const [localWalletAddress, setLocalWalletAddress] = useState<string>('');
+  const [localWalletBalance, setLocalWalletBalance] = useState<number | null>(null);
+  const [localIsLoadingBalance, setLocalIsLoadingBalance] = useState<boolean>(false);
+  const [showWalletModal, setShowWalletModal] = useState<boolean>(false);
 
   const isWalletConnected =
     externalWalletConnected !== undefined ? externalWalletConnected : localWalletConnected;
   const currentWalletAddress =
     externalWalletAddress !== undefined ? externalWalletAddress : localWalletAddress;
+  const currentBalance =
+    externalWalletBalance !== undefined ? externalWalletBalance : localWalletBalance;
+  const currentIsLoadingBalance =
+    externalIsLoadingBalance !== undefined ? externalIsLoadingBalance : localIsLoadingBalance;
+
+  const refreshLocalBalance = async (addr?: string) => {
+    const target = addr || currentWalletAddress;
+    if (!target) return;
+    if (onRefreshBalance) {
+      onRefreshBalance();
+      return;
+    }
+    setLocalIsLoadingBalance(true);
+    try {
+      const res = await fetchSolanaBalance(target);
+      if (res) {
+        setLocalWalletBalance(res.balance);
+      }
+    } catch (err) {
+      console.warn('Failed to load local balance', err);
+    } finally {
+      setLocalIsLoadingBalance(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isWalletConnected && currentWalletAddress && externalWalletBalance === undefined) {
+      refreshLocalBalance(currentWalletAddress);
+    }
+  }, [isWalletConnected, currentWalletAddress]);
 
   const selectedMerchant =
     MERCHANTS.find((m) => m.id === selectedMerchantId) || MERCHANTS[0];
@@ -61,7 +109,11 @@ export const GamePreviewPage: React.FC<GamePreviewPageProps> = ({
 
   const handleConnectWallet = async () => {
     SoundEngine.playCoin();
-    if (onToggleWallet) {
+    if (onConnectWallet) {
+      onConnectWallet();
+      return;
+    }
+    if (onToggleWallet && !isWalletConnected) {
       onToggleWallet();
       return;
     }
@@ -71,11 +123,10 @@ export const GamePreviewPage: React.FC<GamePreviewPageProps> = ({
       if (res.success && res.address) {
         setLocalWalletAddress(res.address);
         setLocalWalletConnected(true);
+        refreshLocalBalance(res.address);
       }
     } else {
-      await disconnectPhantom();
-      setLocalWalletAddress('');
-      setLocalWalletConnected(false);
+      setShowWalletModal(true);
     }
   };
 
@@ -141,19 +192,38 @@ export const GamePreviewPage: React.FC<GamePreviewPageProps> = ({
 
           {/* Action Buttons: Connect Wallet & START GAME */}
           <div className="flex items-center gap-2.5">
-            <button
-              onClick={handleConnectWallet}
-              id="top_connect_wallet_btn"
-              className={`px-3 py-1.5 text-xs font-bold font-sans border-2 transition-all cursor-pointer flex items-center gap-1.5 ${
-                isWalletConnected
-                  ? 'border-[#22c55e] bg-[#14532d] text-[#86efac]'
-                  : 'border-[#ca8a04] bg-[#2d180d] text-[#fde047] hover:bg-[#3d2414]'
-              }`}
-              title={isWalletConnected ? `Phantom Connected: ${currentWalletAddress}` : 'Connect Phantom Wallet'}
-            >
-              <span>{isWalletConnected ? '🟢' : '👛'}</span>
-              <span>{isWalletConnected ? formatWalletAddress(currentWalletAddress) : 'Connect Phantom'}</span>
-            </button>
+            {isWalletConnected ? (
+              <button
+                onClick={() => {
+                  SoundEngine.playWoodThud();
+                  setShowWalletModal(true);
+                }}
+                id="top_connect_wallet_btn"
+                className="px-3 py-1.5 text-xs font-bold font-sans border-2 border-[#22c55e] bg-[#14532d] hover:bg-[#166534] text-[#86efac] transition-all cursor-pointer flex items-center gap-2 shadow-[0_0_12px_rgba(34,197,94,0.4)]"
+                title={`Phantom Connected: ${currentWalletAddress}. Click to view details and balance.`}
+              >
+                <span className="flex items-center gap-1.5 font-bold">
+                  <span className="w-2 h-2 rounded-full bg-[#4ade80] animate-pulse"></span>
+                  <span className="text-white">Phantom</span>
+                </span>
+                <span className="text-[#fde047] font-mono">
+                  {formatWalletAddress(currentWalletAddress)}
+                </span>
+                <span className="bg-[#0f391f] border border-[#22c55e]/60 px-1.5 py-0.5 text-[11px] font-bold text-[#4ade80]">
+                  {currentIsLoadingBalance ? '... SOL' : formatSolBalance(currentBalance)}
+                </span>
+              </button>
+            ) : (
+              <button
+                onClick={handleConnectWallet}
+                id="top_connect_wallet_btn"
+                className="px-3 py-1.5 text-xs font-bold font-sans border-2 border-[#ca8a04] bg-[#2d180d] hover:bg-[#3d2414] text-[#fde047] transition-all cursor-pointer flex items-center gap-1.5"
+                title="Connect Phantom Wallet"
+              >
+                <span>🟣</span>
+                <span>Connect Phantom</span>
+              </button>
+            )}
 
             <button
               onClick={handleLaunch}
@@ -430,11 +500,40 @@ export const GamePreviewPage: React.FC<GamePreviewPageProps> = ({
               {/* Interactive Wallet Connection Banner */}
               <div className="pt-1">
                 {isWalletConnected ? (
-                  <div className="flex flex-wrap items-center gap-2.5 bg-[#14532d]/50 border border-[#22c55e]/60 px-3 py-2 text-xs font-sans text-[#86efac]">
-                    <span className="text-sm">🛡️</span>
-                    <span>
-                      <strong>On-Chain Ledger Active:</strong> Connected to Phantom ({currentWalletAddress}). Your commercial achievements are linked to this address.
-                    </span>
+                  <div className="flex flex-wrap items-center justify-between gap-3 bg-[#14532d]/60 border-2 border-[#22c55e] p-3 text-xs font-sans text-[#86efac] shadow-inner">
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-2xl">🟣</span>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-[#fde047] text-sm">Phantom Wallet Connected</span>
+                          <span className="px-1.5 py-0.5 bg-[#22c55e]/20 border border-[#22c55e] text-[#4ade80] text-[10px] uppercase font-bold flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#4ade80] animate-pulse"></span>
+                            Active
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-[#86efac] font-mono mt-0.5">
+                          Address: {currentWalletAddress}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="bg-[#0f391f] border border-[#22c55e]/70 px-3 py-1.5 text-center">
+                        <div className="text-[10px] text-[#86efac] uppercase font-bold">SOL Balance</div>
+                        <div className="text-sm font-bold text-[#fde047]">
+                          {currentIsLoadingBalance ? 'Fetching...' : formatSolBalance(currentBalance)}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => {
+                          SoundEngine.playParchment();
+                          setShowWalletModal(true);
+                        }}
+                        className="px-3 py-2 bg-[#2d180d] hover:bg-[#452614] border border-[#ca8a04] text-[#fde047] text-xs font-bold transition-all cursor-pointer flex items-center gap-1"
+                      >
+                        <span>⚙️</span>
+                        <span>Wallet Details</span>
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <div className="flex flex-wrap items-center gap-3 bg-[#2d180d]/80 border border-[#ca8a04]/50 p-2.5">
@@ -1059,6 +1158,37 @@ export const GamePreviewPage: React.FC<GamePreviewPageProps> = ({
           </button>
         </div>
       </section>
+
+      {/* Wallet Details Modal */}
+      {showWalletModal && isWalletConnected && (
+        <WalletDetailsModal
+          address={currentWalletAddress}
+          balance={currentBalance}
+          cluster={externalWalletCluster || 'Solana'}
+          isLoadingBalance={currentIsLoadingBalance}
+          onRefreshBalance={() => {
+            if (onRefreshBalance) {
+              onRefreshBalance();
+            } else {
+              refreshLocalBalance(currentWalletAddress);
+            }
+          }}
+          onDisconnect={async () => {
+            if (onDisconnectWallet) {
+              onDisconnectWallet();
+            } else if (onToggleWallet) {
+              onToggleWallet();
+            } else {
+              await disconnectPhantom();
+              setLocalWalletAddress('');
+              setLocalWalletConnected(false);
+              setLocalWalletBalance(null);
+            }
+            setShowWalletModal(false);
+          }}
+          onClose={() => setShowWalletModal(false)}
+        />
+      )}
     </div>
   );
 };
