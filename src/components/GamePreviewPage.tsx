@@ -12,7 +12,7 @@ import { MERCHANTS } from '../data/merchants';
 import { LOCATIONS } from '../data/locations';
 import { ITEMS } from '../data/items';
 import { WAREHOUSE_UPGRADES, CART_UPGRADES } from '../data/ranks';
-import { GoldCoinIcon, WaxSealBadge } from './PixelIcons';
+import { GoldCoinIcon, WaxSealBadge, PhantomGhostIcon } from './PixelIcons';
 import { SoundEngine } from '../utils/sound';
 import {
   connectPhantom,
@@ -268,7 +268,7 @@ export const GamePreviewPage: React.FC<GamePreviewPageProps> = ({
                 title={`Phantom Connected: ${currentWalletAddress}. Click to view details and balance.`}
               >
                 <span className="flex items-center gap-1.5 font-bold">
-                  <span className="w-2 h-2 rounded-full bg-[#4ade80] animate-pulse"></span>
+                  <PhantomGhostIcon size={16} />
                   <span className="text-white">Phantom</span>
                 </span>
                 <span className="text-[#fde047] font-mono">
@@ -282,11 +282,11 @@ export const GamePreviewPage: React.FC<GamePreviewPageProps> = ({
               <button
                 onClick={handleConnectWallet}
                 id="top_connect_wallet_btn"
-                className="px-3 py-1.5 text-xs font-bold font-sans border-2 border-[#ca8a04] bg-[#2d180d] hover:bg-[#3d2414] text-[#fde047] transition-all cursor-pointer flex items-center gap-1.5"
+                className="px-3 py-1.5 text-xs font-bold font-sans border-2 border-[#534bb1] bg-[#1c142c] hover:bg-[#2b1f44] text-[#d8b4fe] transition-all cursor-pointer flex items-center gap-2 shadow-[0_0_10px_rgba(83,75,177,0.3)] hover:border-[#ab9ff2]"
                 title="Connect Phantom Wallet"
               >
-                <span>🟣</span>
-                <span>Connect Phantom</span>
+                <PhantomGhostIcon size={16} />
+                <span className="text-white font-semibold">Connect Phantom</span>
               </button>
             )}
 

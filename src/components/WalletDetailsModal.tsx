@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { SoundEngine } from '../utils/sound';
 import { formatWalletAddress, formatSolBalance } from '../utils/phantom';
+import { PhantomGhostIcon } from './PixelIcons';
 
 interface WalletDetailsModalProps {
   address: string;
@@ -47,14 +48,17 @@ export const WalletDetailsModal: React.FC<WalletDetailsModalProps> = ({
         </button>
 
         {/* Modal Header */}
-        <div className="border-b-2 border-[#5c371e] pb-3 text-center">
+        <div className="border-b-2 border-[#5c371e] pb-3 text-center flex flex-col items-center">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#1a0f0a] border border-[#22c55e] text-[#86efac] text-xs uppercase tracking-wider mb-2">
             <span className="w-2 h-2 rounded-full bg-[#4ade80] animate-pulse"></span>
             <span>Wallet Connected</span>
           </div>
-          <h2 className="font-medieval text-2xl font-bold text-[#fde047]">
-            Phantom Wallet
-          </h2>
+          <div className="flex items-center justify-center gap-2.5 my-1">
+            <PhantomGhostIcon size={28} />
+            <h2 className="font-medieval text-2xl font-bold text-[#fde047]">
+              Phantom Wallet
+            </h2>
+          </div>
           <div className="text-xs text-[#a89279] font-sans">
             Solana Network ({cluster})
           </div>
@@ -65,8 +69,8 @@ export const WalletDetailsModal: React.FC<WalletDetailsModalProps> = ({
           {/* Status & Provider */}
           <div className="p-3 bg-[#170c07] border border-[#4a2e1c] flex items-center justify-between">
             <span className="text-[#a89279]">Provider:</span>
-            <div className="flex items-center gap-1.5 font-bold text-[#facc15]">
-              <span className="text-base">🟣</span>
+            <div className="flex items-center gap-2 font-bold text-[#facc15]">
+              <PhantomGhostIcon size={20} />
               <span>Phantom (Solana)</span>
             </div>
           </div>

@@ -28,7 +28,7 @@ import {
   setStoredWalletAddress,
   extractSolanaAddress
 } from './utils/phantom';
-import { PixelIcon, GoldPouchIcon, GoldCoinIcon, CompassRoseIcon, WaxSealBadge } from './components/PixelIcons';
+import { PixelIcon, GoldPouchIcon, GoldCoinIcon, CompassRoseIcon, WaxSealBadge, PhantomGhostIcon } from './components/PixelIcons';
 import { PixelCanvasMarket } from './components/PixelCanvasMarket';
 import { MarketTradeView } from './components/MarketTradeView';
 import { WarehouseView } from './components/WarehouseView';
@@ -672,7 +672,7 @@ export default function App() {
                 className="pixel-btn px-2.5 py-1 text-xs font-bold font-sans flex items-center gap-1.5 cursor-pointer bg-[#14532d] hover:bg-[#166534] text-[#86efac] border border-[#22c55e] shadow-[0_0_10px_rgba(34,197,94,0.3)]"
                 title={`Phantom Connected: ${walletAddress}. Click to view details and balance.`}
               >
-                <span className="w-2 h-2 rounded-full bg-[#4ade80] animate-pulse"></span>
+                <PhantomGhostIcon size={16} />
                 <span className="font-bold text-white hidden sm:inline">Phantom:</span>
                 <span className="text-[#fde047] font-mono">{formatWalletAddress(walletAddress)}</span>
                 <span className="bg-[#0f391f] border border-[#22c55e]/60 px-1.5 py-0.5 text-[11px] font-bold text-[#4ade80]">
@@ -682,11 +682,11 @@ export default function App() {
             ) : (
               <button
                 onClick={handleConnectWallet}
-                className="pixel-btn px-2.5 py-1 text-xs font-bold font-sans flex items-center gap-1.5 cursor-pointer bg-[#2d180d] text-[#fde047] border border-[#ca8a04] hover:bg-[#3d2414]"
+                className="pixel-btn px-2.5 py-1 text-xs font-bold font-sans flex items-center gap-1.5 cursor-pointer bg-[#1c142c] text-[#d8b4fe] border border-[#534bb1] hover:bg-[#2b1f44] shadow-[0_0_10px_rgba(83,75,177,0.3)] hover:border-[#ab9ff2]"
                 title="Connect Phantom Wallet"
               >
-                <span>🟣</span>
-                <span className="hidden sm:inline">Connect Phantom</span>
+                <PhantomGhostIcon size={16} />
+                <span className="hidden sm:inline font-semibold text-white">Connect Phantom</span>
               </button>
             )}
 

@@ -34,7 +34,8 @@ export const ICON_ASSETS = {
   warehouse: '/assets/icons/warehouse.svg',
   map: '/assets/icons/map.svg',
   merchants: '/assets/icons/merchants.svg',
-  events: '/assets/icons/events.svg'
+  events: '/assets/icons/events.svg',
+  phantom: '/assets/icons/phantom.svg'
 };
 
 export const CHARACTER_ASSETS: Record<string, string> = {

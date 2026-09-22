@@ -221,5 +221,21 @@ export const GoldCoinIcon: React.FC<{ size?: number; className?: string }> = ({ 
   />
 );
 
+export const PhantomGhostIcon: React.FC<{ size?: number; className?: string }> = ({
+  size = 18,
+  className = ''
+}) => (
+  <img
+    src={ICON_ASSETS.phantom}
+    alt="Phantom"
+    width={size}
+    height={size}
+    className={`inline-block select-none rounded-full shrink-0 shadow-xs ${className}`}
+    style={{ width: size, height: size }}
+    draggable={false}
+  />
+);
+
+
 
 
