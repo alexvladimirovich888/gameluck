@@ -1,6 +1,6 @@
 {
-  "name": "Marketburg: Medieval Market",
-  "description": "Pixel art medieval merchant simulation with dynamic market economies, trade caravans, seasonal shifts, and merchant guilds.",
+  "name": "Goldbound",
+  "description": "Goldbound - Medieval merchant trading simulation with dynamic economies, trade caravans, seasonal shifts, and guild alliances.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

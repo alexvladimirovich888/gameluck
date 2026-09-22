@@ -13,7 +13,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onClose }) => 
         <div className="border-b-2 border-[#5c371e] pb-3 text-center flex flex-col items-center">
           <WaxSealBadge size={48} className="mb-1" />
           <div className="text-xs font-bold text-[#facc15] uppercase tracking-widest">
-            Welcome to Marketburg
+            Welcome to Goldbound
           </div>
           <h2 className="font-medieval text-2xl font-bold text-[#fde047] mt-1">
             THE WAY OF THE MEDIEVAL MERCHANT

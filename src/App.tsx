@@ -15,6 +15,14 @@ import { MERCHANTS } from './data/merchants';
 import { LOCATIONS } from './data/locations';
 import { ITEMS_MAP } from './data/items';
 import { PLAYER_RANKS } from './data/ranks';
+import { UI_ASSETS } from './utils/assets';
+import {
+  connectPhantom,
+  disconnectPhantom,
+  autoConnectPhantom,
+  formatWalletAddress,
+  getPhantomProvider
+} from './utils/phantom';
 import { PixelIcon, GoldPouchIcon, GoldCoinIcon, CompassRoseIcon, WaxSealBadge } from './components/PixelIcons';
 import { PixelCanvasMarket } from './components/PixelCanvasMarket';
 import { MarketTradeView } from './components/MarketTradeView';
@@ -25,10 +33,13 @@ import { EventsNewsView } from './components/EventsNewsView';
 import { MerchantDialogueModal } from './components/MerchantDialogueModal';
 import { OnboardingModal } from './components/OnboardingModal';
 import { ProgressionModal } from './components/ProgressionModal';
+import { GamePreviewPage } from './components/GamePreviewPage';
 
 type ActiveTab = 'market' | 'warehouse' | 'map' | 'merchants' | 'events';
+type ViewMode = 'preview' | 'game';
 
 export default function App() {
+  const [viewMode, setViewMode] = useState<ViewMode>('preview');
   const [player, setPlayer] = useState<PlayerState>(() => {
     const saved = loadGame();
     return saved ? saved.player : createInitialPlayer();
@@ -47,11 +58,67 @@ export default function App() {
   const [isMuted, setIsMuted] = useState<boolean>(SoundEngine.isMuted());
   const [floatingNotice, setFloatingNotice] = useState<{ text: string; isPositive: boolean } | null>(null);
   const [dayTransitioning, setDayTransitioning] = useState<boolean>(false);
+  const [walletConnected, setWalletConnected] = useState<boolean>(false);
+  const [walletAddress, setWalletAddress] = useState<string>('');
 
   // Auto-save on state change
   useEffect(() => {
     saveGame(player, market);
   }, [player, market]);
+
+  // Phantom Wallet detection & rehydration
+  useEffect(() => {
+    autoConnectPhantom().then((addr) => {
+      if (addr) {
+        setWalletAddress(addr);
+        setWalletConnected(true);
+      }
+    });
+
+    const provider = getPhantomProvider();
+    if (provider) {
+      const handleAccountChange = (pubKey: any) => {
+        if (pubKey) {
+          setWalletAddress(pubKey.toString());
+          setWalletConnected(true);
+        } else {
+          setWalletAddress('');
+          setWalletConnected(false);
+        }
+      };
+      const handleDisconnect = () => {
+        setWalletAddress('');
+        setWalletConnected(false);
+      };
+      provider.on('accountChanged', handleAccountChange);
+      provider.on('disconnect', handleDisconnect);
+      return () => {
+        provider.removeListener('accountChanged', handleAccountChange);
+        provider.removeListener('disconnect', handleDisconnect);
+      };
+    }
+  }, []);
+
+  const handleToggleWallet = async () => {
+    SoundEngine.playCoin();
+    if (!walletConnected) {
+      const res = await connectPhantom();
+      if (res.success && res.address) {
+        setWalletAddress(res.address);
+        setWalletConnected(true);
+        triggerToast('Phantom connected: ' + formatWalletAddress(res.address), true);
+      } else if (res.notInstalled) {
+        triggerToast('Phantom not detected! Opening phantom.app...', false);
+      } else if (res.error) {
+        triggerToast(res.error, false);
+      }
+    } else {
+      await disconnectPhantom();
+      setWalletAddress('');
+      setWalletConnected(false);
+      triggerToast('Phantom disconnected.', false);
+    }
+  };
 
   // First-time onboarding check
   useEffect(() => {
@@ -411,6 +478,18 @@ export default function App() {
     stormy: '⛈️ Stormy'
   };
 
+  if (viewMode === 'preview') {
+    return (
+      <GamePreviewPage
+        onStartGame={() => setViewMode('game')}
+        hasSavedGame={player.currentDay > 1 || player.gold !== 150}
+        walletConnected={walletConnected}
+        walletAddress={walletAddress}
+        onToggleWallet={handleToggleWallet}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#0d0907] text-[#eedcc0] flex flex-col font-medieval select-none">
       {/* 1. TOP STATUS BAR (WOOD & IRON) */}
@@ -418,12 +497,16 @@ export default function App() {
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2.5">
           {/* Brand & Crest */}
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center border-2 border-[#facc15] bg-[#1a0f0a] shadow-inner">
-              <PixelIcon name="swords" size={22} />
+            <div className="flex h-9 w-9 items-center justify-center border-2 border-[#facc15] bg-[#1a0f0a] shadow-inner overflow-hidden p-0.5">
+              <img
+                src={UI_ASSETS.gameLogo}
+                alt="Goldbound Logo"
+                className="w-full h-full object-contain pixelated"
+              />
             </div>
             <div>
               <h1 className="font-medieval text-base sm:text-lg font-bold text-[#fde047] tracking-wider leading-none">
-                MARKETBURG
+                GOLDBOUND
               </h1>
               <span className="text-[10px] text-[#ca8a04] uppercase tracking-widest leading-none">
                 {LOCATIONS[player.currentLocationId].name}
@@ -471,7 +554,7 @@ export default function App() {
             </button>
           </div>
 
-          {/* Action Buttons: Next Day, Audio, Help, Reset */}
+          {/* Action Buttons: Next Day, Audio, Codex, Connect Wallet, Help, Reset */}
           <div className="flex items-center gap-2">
             <button
               onClick={handleNextDay}
@@ -479,6 +562,34 @@ export default function App() {
             >
               <span>Next Day</span>
               <span>➔</span>
+            </button>
+
+            <button
+              onClick={() => {
+                SoundEngine.playParchment();
+                setViewMode('preview');
+              }}
+              className="pixel-btn bg-[#2d180d] hover:bg-[#452614] px-2.5 py-1 text-xs font-bold text-[#fde047] border border-[#ca8a04] flex items-center gap-1"
+              title="Goldbound Lore & Guide"
+            >
+              <span>📖</span>
+              <span className="hidden sm:inline">Codex</span>
+            </button>
+
+            {/* Connect Wallet in top right */}
+            <button
+              onClick={handleToggleWallet}
+              className={`pixel-btn px-2.5 py-1 text-xs font-bold font-sans flex items-center gap-1.5 cursor-pointer ${
+                walletConnected
+                  ? 'bg-[#14532d] text-[#86efac] border border-[#22c55e]'
+                  : 'bg-[#2d180d] text-[#fde047] border border-[#ca8a04]'
+              }`}
+              title={walletConnected ? `Phantom Connected: ${walletAddress}` : 'Connect Phantom Wallet'}
+            >
+              <span>{walletConnected ? '🟢' : '👛'}</span>
+              <span className="hidden sm:inline">
+                {walletConnected ? formatWalletAddress(walletAddress) : 'Connect Phantom'}
+              </span>
             </button>
 
             <button

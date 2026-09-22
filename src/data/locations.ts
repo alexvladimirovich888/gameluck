@@ -4,7 +4,7 @@ export const LOCATIONS: Record<LocationId, LocationInfo> = {
   market_square: {
     id: 'market_square',
     name: 'Market Square',
-    title: 'The Heart of Marketburg',
+    title: 'The Heart of Goldbound',
     description: 'A bustling central plaza beneath the town hall eaves. Merchants from every guild trade here at balanced market prices.',
     travelDays: 0,
     travelCost: 0,
