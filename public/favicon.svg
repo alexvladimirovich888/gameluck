@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <!-- Background Brown Radial / Linear Gradient -->
+    <linearGradient id="bgWood" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4a2c17" />
+      <stop offset="50%" stop-color="#2d170c" />
+      <stop offset="100%" stop-color="#190b05" />
+    </linearGradient>
+
+    <!-- Gold Gradients for Letter G and Frame -->
+    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fff59d" />
+      <stop offset="30%" stop-color="#fde047" />
+      <stop offset="70%" stop-color="#eab308" />
+      <stop offset="100%" stop-color="#996515" />
+    </linearGradient>
+
+    <linearGradient id="goldBorder" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="50%" stop-color="#ca8a04" />
+      <stop offset="100%" stop-color="#78350f" />
+    </linearGradient>
+
+    <!-- Shadow filter -->
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="1" dy="2" stdDeviation="1.5" flood-color="#000000" flood-opacity="0.85" />
+    </filter>
+  </defs>
+
+  <!-- Base Rounded Background on Brown -->
+  <rect x="2" y="2" width="60" height="60" rx="10" fill="url(#bgWood)" stroke="url(#goldBorder)" stroke-width="3" />
+
+  <!-- Inner Inset Border -->
+  <rect x="6" y="6" width="52" height="52" rx="7" fill="none" stroke="#5c371e" stroke-width="1.5" stroke-dasharray="3,1" opacity="0.75" />
+
+  <!-- Medieval G letter -->
+  <text 
+    x="32" 
+    y="46" 
+    font-family="'MedievalSharp', 'Cinzel', serif" 
+    font-size="42" 
+    font-weight="bold" 
+    text-anchor="middle" 
+    fill="url(#goldGradient)"
+    filter="url(#shadow)"
+    stroke="#78350f"
+    stroke-width="1"
+    letter-spacing="-1"
+  >G</text>
+</svg>
