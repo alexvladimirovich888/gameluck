@@ -23,7 +23,10 @@ import {
   formatWalletAddress,
   getPhantomProvider,
   fetchSolanaBalance,
-  formatSolBalance
+  formatSolBalance,
+  getStoredWalletAddress,
+  setStoredWalletAddress,
+  extractSolanaAddress
 } from './utils/phantom';
 import { PixelIcon, GoldPouchIcon, GoldCoinIcon, CompassRoseIcon, WaxSealBadge } from './components/PixelIcons';
 import { PixelCanvasMarket } from './components/PixelCanvasMarket';
@@ -61,8 +64,8 @@ export default function App() {
   const [isMuted, setIsMuted] = useState<boolean>(SoundEngine.isMuted());
   const [floatingNotice, setFloatingNotice] = useState<{ text: string; isPositive: boolean } | null>(null);
   const [dayTransitioning, setDayTransitioning] = useState<boolean>(false);
-  const [walletConnected, setWalletConnected] = useState<boolean>(false);
-  const [walletAddress, setWalletAddress] = useState<string>('');
+  const [walletAddress, setWalletAddress] = useState<string>(() => getStoredWalletAddress());
+  const [walletConnected, setWalletConnected] = useState<boolean>(() => Boolean(getStoredWalletAddress()));
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
   const [walletCluster, setWalletCluster] = useState<string>('Solana');
   const [isLoadingBalance, setIsLoadingBalance] = useState<boolean>(false);
@@ -110,34 +113,72 @@ export default function App() {
 
     const provider = getPhantomProvider();
     if (provider) {
-      const handleAccountChange = (pubKey: any) => {
-        if (pubKey) {
-          const addr = pubKey.toString();
+      const handleConnect = (pubKey: any) => {
+        const addr = extractSolanaAddress(pubKey) || extractSolanaAddress(provider.publicKey);
+        if (addr) {
+          setStoredWalletAddress(addr);
           setWalletAddress(addr);
           setWalletConnected(true);
           refreshBalance(addr);
+        }
+      };
+      const handleAccountChange = (pubKey: any) => {
+        if (pubKey) {
+          const addr = extractSolanaAddress(pubKey);
+          if (addr) {
+            setStoredWalletAddress(addr);
+            setWalletAddress(addr);
+            setWalletConnected(true);
+            refreshBalance(addr);
+          }
         } else {
+          setStoredWalletAddress('');
           setWalletAddress('');
           setWalletConnected(false);
           setWalletBalance(null);
         }
       };
       const handleDisconnect = () => {
+        setStoredWalletAddress('');
         setWalletAddress('');
         setWalletConnected(false);
         setWalletBalance(null);
       };
-      provider.on('accountChanged', handleAccountChange);
-      provider.on('disconnect', handleDisconnect);
+
+      if (typeof provider.on === 'function') {
+        provider.on('connect', handleConnect);
+        provider.on('accountChanged', handleAccountChange);
+        provider.on('disconnect', handleDisconnect);
+      }
+
+      // Check on window focus when popup closes!
+      const handleWindowFocus = () => {
+        const currentPk = extractSolanaAddress(provider.publicKey) || getStoredWalletAddress();
+        if (currentPk) {
+          setWalletAddress((prev) => prev || currentPk);
+          setWalletConnected(true);
+          refreshBalance(currentPk);
+        }
+      };
+      window.addEventListener('focus', handleWindowFocus);
+
       return () => {
-        provider.removeListener('accountChanged', handleAccountChange);
-        provider.removeListener('disconnect', handleDisconnect);
+        if (typeof provider.removeListener === 'function') {
+          provider.removeListener('connect', handleConnect);
+          provider.removeListener('accountChanged', handleAccountChange);
+          provider.removeListener('disconnect', handleDisconnect);
+        }
+        window.removeEventListener('focus', handleWindowFocus);
       };
     }
   }, [refreshBalance]);
 
   const handleConnectWallet = async () => {
     SoundEngine.playCoin();
+    if (walletConnected) {
+      setShowWalletModal(true);
+      return;
+    }
     const res = await connectPhantom();
     if (res.success && res.address) {
       setWalletAddress(res.address);

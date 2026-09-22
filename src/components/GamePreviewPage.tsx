@@ -19,7 +19,10 @@ import {
   disconnectPhantom,
   formatWalletAddress,
   fetchSolanaBalance,
-  formatSolBalance
+  formatSolBalance,
+  getStoredWalletAddress,
+  extractSolanaAddress,
+  getPhantomProvider
 } from '../utils/phantom';
 import { WalletDetailsModal } from './WalletDetailsModal';
 
@@ -53,18 +56,32 @@ export const GamePreviewPage: React.FC<GamePreviewPageProps> = ({
   const [selectedMerchantId, setSelectedMerchantId] = useState<string>('farmer_tomas');
   const [selectedLocationId, setSelectedLocationId] = useState<string>('market_square');
   const [itemCategoryFilter, setItemCategoryFilter] = useState<string>('all');
-  const [localWalletConnected, setLocalWalletConnected] = useState<boolean>(false);
-  const [localWalletAddress, setLocalWalletAddress] = useState<string>('');
+  const [localWalletConnected, setLocalWalletConnected] = useState<boolean>(() => {
+    return Boolean(getStoredWalletAddress());
+  });
+  const [localWalletAddress, setLocalWalletAddress] = useState<string>(() => {
+    return getStoredWalletAddress();
+  });
   const [localWalletBalance, setLocalWalletBalance] = useState<number | null>(null);
   const [localIsLoadingBalance, setLocalIsLoadingBalance] = useState<boolean>(false);
   const [showWalletModal, setShowWalletModal] = useState<boolean>(false);
 
-  const isWalletConnected =
-    externalWalletConnected !== undefined ? externalWalletConnected : localWalletConnected;
   const currentWalletAddress =
-    externalWalletAddress !== undefined ? externalWalletAddress : localWalletAddress;
+    (externalWalletAddress && externalWalletAddress.trim()) ||
+    (localWalletAddress && localWalletAddress.trim()) ||
+    getStoredWalletAddress();
+
+  const isWalletConnected = Boolean(
+    externalWalletConnected ||
+    localWalletConnected ||
+    (currentWalletAddress && currentWalletAddress.length > 0)
+  );
+
   const currentBalance =
-    externalWalletBalance !== undefined ? externalWalletBalance : localWalletBalance;
+    externalWalletBalance !== undefined && externalWalletBalance !== null
+      ? externalWalletBalance
+      : localWalletBalance;
+
   const currentIsLoadingBalance =
     externalIsLoadingBalance !== undefined ? externalIsLoadingBalance : localIsLoadingBalance;
 
@@ -89,6 +106,45 @@ export const GamePreviewPage: React.FC<GamePreviewPageProps> = ({
   };
 
   useEffect(() => {
+    const stored = getStoredWalletAddress();
+    if (stored) {
+      setLocalWalletAddress(stored);
+      setLocalWalletConnected(true);
+      refreshLocalBalance(stored);
+    }
+
+    const provider = getPhantomProvider();
+    if (provider) {
+      const handleConnect = (pubKey: any) => {
+        const addr = extractSolanaAddress(pubKey) || extractSolanaAddress(provider.publicKey);
+        if (addr) {
+          setLocalWalletAddress(addr);
+          setLocalWalletConnected(true);
+          refreshLocalBalance(addr);
+        }
+      };
+      if (typeof provider.on === 'function') {
+        provider.on('connect', handleConnect);
+      }
+      const handleFocus = () => {
+        const addr = extractSolanaAddress(provider.publicKey) || getStoredWalletAddress();
+        if (addr) {
+          setLocalWalletAddress(addr);
+          setLocalWalletConnected(true);
+          refreshLocalBalance(addr);
+        }
+      };
+      window.addEventListener('focus', handleFocus);
+      return () => {
+        if (typeof provider.removeListener === 'function') {
+          provider.removeListener('connect', handleConnect);
+        }
+        window.removeEventListener('focus', handleFocus);
+      };
+    }
+  }, []);
+
+  useEffect(() => {
     if (isWalletConnected && currentWalletAddress && externalWalletBalance === undefined) {
       refreshLocalBalance(currentWalletAddress);
     }
@@ -109,8 +165,19 @@ export const GamePreviewPage: React.FC<GamePreviewPageProps> = ({
 
   const handleConnectWallet = async () => {
     SoundEngine.playCoin();
+    if (isWalletConnected) {
+      setShowWalletModal(true);
+      return;
+    }
+
     if (onConnectWallet) {
-      onConnectWallet();
+      await onConnectWallet();
+      const stored = getStoredWalletAddress();
+      if (stored) {
+        setLocalWalletAddress(stored);
+        setLocalWalletConnected(true);
+        refreshLocalBalance(stored);
+      }
       return;
     }
     if (onToggleWallet && !isWalletConnected) {
@@ -118,13 +185,11 @@ export const GamePreviewPage: React.FC<GamePreviewPageProps> = ({
       return;
     }
 
-    if (!isWalletConnected) {
-      const res = await connectPhantom();
-      if (res.success && res.address) {
-        setLocalWalletAddress(res.address);
-        setLocalWalletConnected(true);
-        refreshLocalBalance(res.address);
-      }
+    const res = await connectPhantom();
+    if (res.success && res.address) {
+      setLocalWalletAddress(res.address);
+      setLocalWalletConnected(true);
+      refreshLocalBalance(res.address);
     } else {
       setShowWalletModal(true);
     }
