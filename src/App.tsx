@@ -581,15 +581,8 @@ export default function App() {
       {/* 1. TOP STATUS BAR (WOOD & IRON) */}
       <header className="pixel-box-wood sticky top-0 z-40 px-3 py-2 sm:px-5 sm:py-2.5">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2.5">
-          {/* Brand & Crest */}
+          {/* Brand */}
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center border-2 border-[#facc15] bg-[#1a0f0a] shadow-inner overflow-hidden p-0.5">
-              <img
-                src={UI_ASSETS.gameLogo}
-                alt="Goldbound Logo"
-                className="w-full h-full object-contain pixelated"
-              />
-            </div>
             <div>
               <h1 className="font-medieval text-base sm:text-lg font-bold text-[#fde047] tracking-wider leading-none">
                 GOLDBOUND

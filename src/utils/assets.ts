@@ -25,8 +25,7 @@ export const UI_ASSETS = {
   goldPouch: '/assets/ui/gold_pouch.png',
   compassRose: '/assets/ui/compass_rose.png',
   coin: '/assets/items/coin.png',
-  sheet: '/assets/ui/medieval_ui_sheet.jpg',
-  gameLogo: 'https://i.postimg.cc/W1rGTZxt/867ad2e7-8acf-4c6a-b004-ee84fd13ff16.png'
+  sheet: '/assets/ui/medieval_ui_sheet.jpg'
 };
 
 export const ICON_ASSETS = {
